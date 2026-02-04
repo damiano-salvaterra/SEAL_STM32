@@ -1,0 +1,7 @@
+{
+  "board": "NUCLEO-N657X0-Q",
+  "device": "STM32N657X0H3Q",
+  "toolchain": "GCC",
+  "core": "Cortex-M55",
+  "order": 0
+}

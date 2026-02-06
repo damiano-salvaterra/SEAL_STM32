@@ -34,4 +34,9 @@ sh2_Hal_t *shtp_uart_hal_init(uart_hal_t *pHal, bool dfu);
 
 sh2_Hal_t *bno_dfu_uart_hal_init(uart_hal_t *pHal, bool dfu);
 
+void notify_uart_error(void);
+void notify_tx_cplt(void);
+void notify_rx_half_cplt(void);
+void notify_bno_interrupt_falling(void);
+
 #endif

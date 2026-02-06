@@ -75,7 +75,9 @@ int iar_fputc(int ch);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void button_handler(){
+  bno08x_service();
+}
 /* USER CODE END 0 */
 
 /**
@@ -115,7 +117,6 @@ int main(void)
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim2); //start timer
-  HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
   HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
 
 
@@ -127,11 +128,13 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  bno08x_service(); //call onnce to check everything okay
+  HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
+
   while (1)
   {
     	HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
-      bno08x_service();
-	    HAL_Delay(100);
+	    HAL_Delay(50);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

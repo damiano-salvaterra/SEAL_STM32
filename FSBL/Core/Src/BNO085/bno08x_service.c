@@ -121,7 +121,8 @@ static void printEvent(const sh2_SensorEvent_t * event)
     sh2_SensorValue_t value;
     float scaleRadToDeg = 180.0 / 3.14159265358;
     float r, i, j, k, acc_deg, x, y, z;
-    float t;
+    //float t;
+    double t;
     static int skip = 0;
 
     rc = sh2_decodeSensorEvent(&value, event);
@@ -363,7 +364,6 @@ void bno08x_service(void)
         resetOccurred = false;
         startReports();
     }
-
     // Service the sensor hub.
     // Sensor reports and event processing handled by callbacks.
     sh2_service();

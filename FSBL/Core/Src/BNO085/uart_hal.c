@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "stm32n6xx_hal.h"
 #include "stm32n6xx_hal_tim.h"
@@ -137,24 +138,20 @@ static const uint8_t fsp200_autobaud[] = { FSP200_AUTOBAUD_CHAR };
 // Private methods
 volatile bool usartErrorEncountered = false;
 
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+
+void notify_tx_cplt()
 {
-    if (huart->Instance == USART2) { // O USART1, quella che usi
-        usartErrorEncountered = true;
-        
-        //printf("[UART HAL] ERROR DETECTED! Code: 0x%lx\n", huart->ErrorCode);
+    // Gestione specifica per il modo DFU
+    if (txState == TX_SENDING_DFU)
+    {
+        txState = TX_IDLE;
     }
 }
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+void notify_uart_error()
 {
-    if (huart->Instance == USART2) { // O USART1
-        // Gestione specifica per il modo DFU
-        if (txState == TX_SENDING_DFU)
-        {
-            txState = TX_IDLE;
-        }
-    }
+    usartErrorEncountered = true;
+
 }
 
 static void disableInts(void)
@@ -729,23 +726,17 @@ static uint32_t bno_dfu_uart_hal_getTimeUs(sh2_Hal_t *self)
     return timeNowUs();
 }
 
-// ----------------------------------------------------------------------------------
-// Callbacks for ISR, UART Operations
-// ----------------------------------------------------------------------------------
 
-void HAL_GPIO_EXTI_Callback(uint16_t n)
+void notify_rx_half_cplt()
+{
+
+}
+
+void notify_bno_interrupt_falling()
 {
     inReset = false;
-    rxTimestamp_uS = timeNowUs();
+    rxTimestamp_uS = timeNowUs();   
 }
-
-
-void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
-{
-    // Ignore
-}
-
-
 // ------------------------------------------------------------------------
 // Public methods
 

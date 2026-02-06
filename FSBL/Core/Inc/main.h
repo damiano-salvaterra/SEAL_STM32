@@ -71,7 +71,7 @@ typedef funcptr funcptr_NS;
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void button_handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -94,6 +94,9 @@ void Error_Handler(void);
 #define USART_BNO_TX_GPIO_Port GPIOD
 #define RSTN_Pin GPIO_PIN_3
 #define RSTN_GPIO_Port GPIOC
+#define USR_BTN_Pin GPIO_PIN_13
+#define USR_BTN_GPIO_Port GPIOC
+#define USR_BTN_EXTI_IRQn EXTI13_IRQn
 #define USART_BNO_RX_Pin GPIO_PIN_6
 #define USART_BNO_RX_GPIO_Port GPIOF
 #define GREEN_LED_Pin GPIO_PIN_0

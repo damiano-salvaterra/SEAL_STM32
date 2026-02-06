@@ -67,6 +67,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     "sh2/Src/sh2_util.c"
     "sh2/Src/euler.c"
 
+    "Core/Src/callbacks.c"
+
     "Core/Src/BNO085/uart_hal.c"
     "Core/Src/BNO085/bno08x_uart_hal.c"
     "Core/Src/BNO085/bno08x_service.c"

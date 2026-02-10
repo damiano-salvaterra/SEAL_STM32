@@ -122,7 +122,7 @@ int main(void)
 
   printf("\n\rStarting BNO085 Init...\n\r");
   bno08x_init();
-  printf("\n\rInit Application completed, entering main App Loop...\n\r");
+  printf("\n\rFSBL Init completed, entering FSBL Loop...\n\r");
 
   /* USER CODE END 2 */
 
@@ -134,7 +134,8 @@ int main(void)
   while (1)
   {
     	HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
-	    HAL_Delay(50);
+	    HAL_Delay(250);
+      bno08x_service();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -8,6 +8,34 @@
         {
             "type": "stlinkgdbtarget",
             "request": "launch",
+            "name": "DEBUG_APPLI",
+            "origin": "snippet",
+            "cwd": "${workspaceFolder}",
+            "preBuild": "${command:st-stm32-ide-debug-launch.build}",
+            "runEntry": "BOOT_Application", // Set in BOOT_Application
+            "svdPath": "/home/damole/STMicroelectronics/STM32Cube/STM32CubeProgrammer/SVD/STM32N657.svd", // Replace with your .svd path
+            "imagesAndSymbols": [
+                {
+                    "symbolFileName": "${workspaceFolder}/Appli/build/SEAL_Appli.elf", // Replace this with your path and your_Appli.elf symbol
+                    "imageFileName": "${workspaceFolder}/Appli/build/SEAL_Appli-trusted.elf",
+                },
+
+                {
+                    "symbolFileName": "${workspaceFolder}/FSBL/build/SEAL_FSBL.elf", // Replace this with your path and your_FSBL.elf symbol
+                    "imageFileName": "${workspaceFolder}/FSBL/build/SEAL_FSBL.elf", // Replace this with your path and your_FSBL.elf image
+                }
+            ],
+            "serverExtLoader": [
+                {
+                    "loader": "/home/damole/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/ExternalLoader/MX25UM51245G_STM32N6570-NUCLEO.stldr", // Replace with your external loader path
+                    "initialize": false
+                }
+            ]
+        },
+        
+        {
+            "type": "stlinkgdbtarget",
+            "request": "launch",
             "name": "STM32Cube: STM32 Launch ST-Link GDB Server",
             "origin": "snippet",
             "cwd": "${workspaceFolder}",

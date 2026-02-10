@@ -64,7 +64,7 @@ static void startReports()
         // {SH2_RAW_GYROSCOPE, {.reportInterval_us = 10000}},
 
         // Rotation Vector, 100 Hz
-        {SH2_ROTATION_VECTOR, {.reportInterval_us = 10000}},
+        {SH2_ROTATION_VECTOR, {.reportInterval_us = 100000}},
 
         // Gyro Integrated Rotation Vector, 100 Hz
         // {SH2_GYRO_INTEGRATED_RV, {.reportInterval_us = 10000}},

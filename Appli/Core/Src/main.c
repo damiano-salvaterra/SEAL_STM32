@@ -19,11 +19,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "gpdma.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,7 +52,20 @@
 /* Private function prototypes -----------------------------------------------*/
 static void SystemIsolation_Config(void);
 /* USER CODE BEGIN PFP */
+#if defined(__ICCARM__)
+__ATTRIBUTES size_t __write(int, const unsigned char *, size_t);
+#endif /* __ICCARM__ */
 
+#if defined(__ICCARM__)
+/* New definition from EWARM V9, compatible with EWARM8 */
+int iar_fputc(int ch);
+#define PUTCHAR_PROTOTYPE int iar_fputc(int ch)
+#elif defined ( __CC_ARM ) || defined(__ARMCC_VERSION)
+/* ARM Compiler 5/6*/
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#elif defined(__GNUC__)
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#endif /* __ICCARM__ */
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -83,8 +98,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
+  MX_USART1_UART_Init();
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
+  printf("Application booted and initialized, entering Application main loop...\n\r");
 
   /* USER CODE END 2 */
 
@@ -93,7 +110,8 @@ int main(void)
   while (1)
   {
     HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
-	  HAL_Delay(1000);
+    printf("Looping in application main Loop.\n\r");
+	  HAL_Delay(500);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -134,12 +152,6 @@ void PeriphCommonClock_Config(void)
   /* set all required IPs as secure privileged */
   __HAL_RCC_RIFSC_CLK_ENABLE();
 
-  /*RIMC configuration*/
-  RIMC_MasterConfig_t RIMC_master = {0};
-  RIMC_master.MasterCID = RIF_CID_0;
-  RIMC_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_NPRIV;
-  HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_ETH1, &RIMC_master);
-
   /* RIF-Aware IPs Config */
 
   /* set up GPDMA configuration */
@@ -170,6 +182,35 @@ void PeriphCommonClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+  /**
+    * @brief  Retargets the C library printf function to the USART.
+    * @param  None
+
+    * @retval None
+    */
+  PUTCHAR_PROTOTYPE
+  {
+    /* Place your implementation of fputc here */
+    /* e.g. write a character to the USART1 and Loop until the end of transmission */
+    HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+
+    return ch;
+  }
+
+  #if defined(__ICCARM__)
+  size_t __write(int file, unsigned char const *ptr, size_t len)
+  {
+    size_t idx;
+    unsigned char const *pdata = ptr;
+
+    for (idx = 0; idx < len; idx++)
+    {
+      iar_fputc((int)*pdata);
+      pdata++;
+    }
+    return len;
+  }
+  #endif /* __ICCARM__ */
 
 /* USER CODE END 4 */
 
@@ -184,6 +225,9 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+    printf("APPLICATION ERROR\n\r");
+    HAL_GPIO_TogglePin(RED_LED_GPIO_Port, RED_LED_Pin);
+    HAL_Delay(500);
   }
   /* USER CODE END Error_Handler_Debug */
 }

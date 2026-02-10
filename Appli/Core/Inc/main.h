@@ -75,8 +75,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define USART_CONSOLE_TX_Pin GPIO_PIN_5
+#define USART_CONSOLE_TX_GPIO_Port GPIOE
+#define USART_CONSOLE_RX_Pin GPIO_PIN_6
+#define USART_CONSOLE_RX_GPIO_Port GPIOE
 #define GREEN_LED_Pin GPIO_PIN_0
 #define GREEN_LED_GPIO_Port GPIOG
+#define RED_LED_Pin GPIO_PIN_10
+#define RED_LED_GPIO_Port GPIOG
 
 /* USER CODE BEGIN Private defines */
 

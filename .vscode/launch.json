@@ -45,8 +45,8 @@
             "imagesAndSymbols": [
                 {
                     //"imageFileName": "${command:st-stm32-ide-debug-launch.get-projects-binary-from-context1}"
-                    "imageFileName": "${workspaceFolder}/FSBL/build/SEAL_FSBL_ONLY_FSBL.elf",
-                    "symbolFileName": "${workspaceFolder}/FSBL/build/SEAL_FSBL_ONLY_FSBL.elf",
+                    "imageFileName": "${workspaceFolder}/FSBL/build/SEAL_FSBL.elf",
+                    "symbolFileName": "${workspaceFolder}/FSBL/build/SEAL_FSBL.elf",
                     "format": "elf"
                 }
             ]

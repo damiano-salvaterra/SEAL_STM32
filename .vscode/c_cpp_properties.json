@@ -1,3 +1,8 @@
 {
-    "configurations": []
+    "configurations": [
+        {
+            "name": "STM32",
+            "compileCommands": "${workspaceFolder}/FSBL/build/compile_commands.json"
+        }
+    ]
 }

@@ -12,7 +12,7 @@ include(ExternalProject)
 set(CMAKE_CXX_COMPILER_FORCED "true")
 
 # Set the project name
-set(CMAKE_PROJECT_NAME SEAL_FSBL_ONLY)
+set(CMAKE_PROJECT_NAME SEAL)
 
 # Core project settings
 project(${CMAKE_PROJECT_NAME})

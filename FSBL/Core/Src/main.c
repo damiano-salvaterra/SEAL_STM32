@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "gpdma.h"
+#include "stm32n6xx_hal.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -122,20 +123,33 @@ int main(void)
 
   printf("\n\rStarting BNO085 Init...\n\r");
   bno08x_init();
-  printf("\n\rFSBL Init completed, entering FSBL Loop...\n\r");
+  printf("\n\rFSBL Init completed, executing some polling to check if the sensor is OK.\n\r");
+  printf("\n");
+  uint8_t i = 0;
+  while(i<120){ //poll for 30 seconds
+    HAL_Delay(250);
+    bno08x_service();
+    i++;
+  }
+  printf("\n");
+  printf("\n\rFSBL check completed, BNO085 is OK.\nBooting into Application...\n\r");
+  fflush(stdout);
+  HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  bno08x_service(); //call onnce to check everything okay
-  HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
+  
+  printf("\n\rNo valid Application found, entering FSBL main loop...");
+  fflush(stdout);
 
   while (1)
   {
-    	HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
+    	HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
+      fflush(stdout);
 	    HAL_Delay(250);
-      bno08x_service();
+      //bno08x_service();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

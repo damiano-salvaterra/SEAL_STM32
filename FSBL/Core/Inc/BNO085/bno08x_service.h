@@ -3,5 +3,6 @@
 
 void bno08x_init(void);
 void bno08x_service(void);
+void bno08x_close(void);
     
 #endif

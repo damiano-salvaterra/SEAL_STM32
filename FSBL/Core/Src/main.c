@@ -18,10 +18,12 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "extmem_manager.h"
 #include "gpdma.h"
-#include "stm32n6xx_hal.h"
 #include "tim.h"
 #include "usart.h"
+#include "xspi.h"
+#include "xspim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -115,6 +117,8 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_TIM2_Init();
+  MX_XSPI2_Init();
+  MX_EXTMEM_MANAGER_Init();
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim2); //start timer
@@ -122,32 +126,36 @@ int main(void)
 
 
   printf("\n\rStarting BNO085 Init...\n\r");
-  bno08x_init();
+  //bno08x_init();
   printf("\n\rFSBL Init completed, executing some polling to check if the sensor is OK.\n\r");
   printf("\n");
-  uint8_t i = 0;
-  while(i<120){ //poll for 30 seconds
-    HAL_Delay(250);
-    bno08x_service();
-    i++;
-  }
+  //uint8_t i = 0;
+  //while(i<60){ //poll for 15 seconds
+  //  HAL_Delay(250);
+  //  bno08x_service();
+  //  i++;
+  //}
   printf("\n");
-  printf("\n\rFSBL check completed, BNO085 is OK.\nBooting into Application...\n\r");
+  printf("\n\rFSBL check completed, BNO085 is OK.\n\r");
   fflush(stdout);
   HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
 
   /* USER CODE END 2 */
 
+  /* Launch the application */
+  if (BOOT_OK != BOOT_Application())
+  {
+    Error_Handler();
+  }
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  
-  printf("\n\rNo valid Application found, entering FSBL main loop...");
+    
+  printf("Entering FSBL main loop...");
   fflush(stdout);
 
   while (1)
   {
     	HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-      fflush(stdout);
 	    HAL_Delay(250);
       //bno08x_service();
     /* USER CODE END WHILE */
@@ -355,6 +363,9 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+    printf("FSBL ERROR\n\r");
+    HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
+    HAL_Delay(500);
   }
   /* USER CODE END Error_Handler_Debug */
 }

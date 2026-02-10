@@ -99,8 +99,6 @@ void button_handler(void);
 #define USR_BTN_EXTI_IRQn EXTI13_IRQn
 #define USART_BNO_RX_Pin GPIO_PIN_6
 #define USART_BNO_RX_GPIO_Port GPIOF
-#define GREEN_LED_Pin GPIO_PIN_0
-#define GREEN_LED_GPIO_Port GPIOG
 #define RED_LED_Pin GPIO_PIN_10
 #define RED_LED_GPIO_Port GPIOG
 #define BLUE_LED_Pin GPIO_PIN_8

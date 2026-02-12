@@ -123,23 +123,27 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim2); //start timer
   HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
+  printf("FSBL Init completed, starting User init sequence...\n\r");  
 
-
+  //NOTE: This works in FSBL. But when jumps to application, it crashes becasue the Sensor fires interrupts for which the Applicationhas no handler.
+  //Comment out the BNO init (and polling) code here to see the application working properly (or disable the INTN interrupt)
   printf("\n\rStarting BNO085 Init...\n\r");
-  //bno08x_init();
+  bno08x_init();
   printf("\n\rFSBL Init completed, executing some polling to check if the sensor is OK.\n\r");
   printf("\n");
-  //uint8_t i = 0;
-  //while(i<60){ //poll for 15 seconds
-  //  HAL_Delay(250);
-  //  bno08x_service();
-  //  i++;
-  //}
+  uint8_t i = 0;
+  while(i<60){ //poll for 15 seconds
+    HAL_Delay(250);
+    bno08x_service();
+    i++;
+  }
   printf("\n");
   printf("\n\rFSBL check completed, BNO085 is OK.\n\r");
-  fflush(stdout);
+  
   HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-
+  printf("Jumping to Application...\n\r");  
+  fflush(stdout);
+  __disable_irq();
   /* USER CODE END 2 */
 
   /* Launch the application */

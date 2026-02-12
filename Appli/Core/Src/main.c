@@ -101,6 +101,7 @@ int main(void)
   MX_USART1_UART_Init();
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
+  __enable_irq();
   printf("Application booted and initialized, entering Application main loop...\n\r");
 
   /* USER CODE END 2 */

@@ -105,21 +105,21 @@ extern TIM_HandleTypeDef htim2;
 
 // receive support
 #define UART_HAL_DMA_SIZE (64)            // must be a power of 2!
-static uint8_t __attribute__((section(".noncacheable"))) rxBuffer[UART_HAL_DMA_SIZE]; // receives UART data via DMA (must be a power of 2)
+static uint8_t rxBuffer[UART_HAL_DMA_SIZE]; // receives UART data via DMA (must be a power of 2)
 static uint32_t rxIndex = 0;               // next index to read
 static uint32_t rxTimestamp_uS;            // timestamp of INTN event
 
 // RFC 1622 frame decode area
-static uint8_t __attribute__((section(".noncacheable"))) rxFrame[SH2_HAL_MAX_TRANSFER_IN];
+static uint8_t rxFrame[SH2_HAL_MAX_TRANSFER_IN];
 static uint32_t rxFrameLen;
 static bool rxFrameReady;
-static RxState_t __attribute__((section(".noncacheable"))) rxState;
+static RxState_t rxState;
 
 // Transmit support
 static uint32_t lastTxTime = 0;        // uS timestamp of last tx char (for 100uS intervals)
 static uint16_t lastBsn = 0;           // value of last valid BSN
-static volatile TxState_t __attribute__((section(".noncacheable"))) txState = TX_IDLE;    // transmit state: IDLE, SENDING_BSQ, SENDING_FRAME.
-static uint8_t __attribute__((section(".noncacheable"))) txFrame[2*SH2_HAL_MAX_TRANSFER_OUT+2]; // frame to be sent. (RFC encode on insert)
+static volatile TxState_t txState = TX_IDLE;    // transmit state: IDLE, SENDING_BSQ, SENDING_FRAME.
+static uint8_t txFrame[2*SH2_HAL_MAX_TRANSFER_OUT+2]; // frame to be sent. (RFC encode on insert)
 static uint32_t txFrameLen;            // len of frame to be sent (after RFC encode).
 // buffer status query message (RFC encoded)
 static const uint8_t bsq[3] = { RFC1662_FLAG, PROTOCOL_CONTROL, RFC1662_FLAG };

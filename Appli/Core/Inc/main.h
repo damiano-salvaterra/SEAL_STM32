@@ -79,6 +79,10 @@ void Error_Handler(void);
 #define USART_CONSOLE_TX_GPIO_Port GPIOE
 #define USART_CONSOLE_RX_Pin GPIO_PIN_6
 #define USART_CONSOLE_RX_GPIO_Port GPIOE
+#define ADC1_INPUT_Pin GPIO_PIN_1
+#define ADC1_INPUT_GPIO_Port GPIOA
+#define ADC2_INPUT_Pin GPIO_PIN_13
+#define ADC2_INPUT_GPIO_Port GPIOF
 #define GREEN_LED_Pin GPIO_PIN_0
 #define GREEN_LED_GPIO_Port GPIOG
 #define RED_LED_Pin GPIO_PIN_10

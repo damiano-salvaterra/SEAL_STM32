@@ -18,7 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "gpdma.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -35,18 +37,22 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define ADC_DMA_BUF_SIZE  4096
+#define SAMPLE_WINDOW     10
 /* USER CODE END PM */
+extern DMA_HandleTypeDef handle_GPDMA1_Channel1 ;
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint32_t adc_dma_buffer[ADC_DMA_BUF_SIZE];
+volatile uint16_t adc1_extracted[SAMPLE_WINDOW];
+volatile uint16_t adc2_extracted[SAMPLE_WINDOW];
+volatile uint8_t process_data_flag = 0; // 0 = Nothing, 1 = Data ready (Half), 2 = Data ready (Full)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -99,9 +105,25 @@ int main(void)
   MX_GPIO_Init();
   MX_GPDMA1_Init();
   MX_USART1_UART_Init();
+  MX_ADC1_Init();
+  MX_ADC2_Init();
+  MX_TIM3_Init();
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
   __enable_irq();
+
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+  HAL_ADCEx_Calibration_Start(&hadc2,  ADC_SINGLE_ENDED);
+
+  HAL_ADC_Start(&hadc2); //start slave
+
+  if (HAL_ADCEx_MultiModeStart_DMA(&hadc1, adc_dma_buffer, ADC_DMA_BUF_SIZE) != HAL_OK)
+  {
+      Error_Handler();
+  }
+
+  HAL_TIM_Base_Start(&htim3);
+
   printf("Application booted and initialized, entering Application main loop...\n\r");
 
   /* USER CODE END 2 */
@@ -110,9 +132,31 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
-    printf("Looping in application main Loop.\n\r");
-	  HAL_Delay(500);
+    //HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
+    //printf("Looping in application main Loop.\n\r");
+	  //HAL_Delay(500);
+
+    if (process_data_flag != 0)
+      {
+          uint8_t current_event = process_data_flag;
+          process_data_flag = 0;
+
+          if (current_event == 1) printf("--- HALF BUFFER (Last 10) ---\r\n");
+          else                    printf("--- FULL BUFFER (Last 10) ---\r\n");
+
+          printf("IDX | ADC1 (V) | ADC2 (V)\r\n");
+          
+          for (int i = 0; i < SAMPLE_WINDOW; i++)
+          {
+              //(0-1023 -> 0-1.8V). CHECK THIS, it should be 12 bits for each ADC
+              float v1 = (adc1_extracted[i] * 1.8f) / 1023.0f;
+              float v2 = (adc2_extracted[i] * 1.8f) / 1023.0f;
+
+              printf("#%02d |  %.2f V  |  %.2f V\r\n", i, v1, v2);
+          }
+          printf("\r\n");
+      }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -153,11 +197,20 @@ void PeriphCommonClock_Config(void)
   /* set all required IPs as secure privileged */
   __HAL_RCC_RIFSC_CLK_ENABLE();
 
+  /*RISUP configuration*/
+  HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_ADC12 , RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_NPRIV);
+
   /* RIF-Aware IPs Config */
 
   /* set up GPDMA configuration */
+  /* set GPDMA1 channel 1 used by ADC1 */
+  if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel1,DMA_CHANNEL_SEC|DMA_CHANNEL_PRIV|DMA_CHANNEL_SRC_SEC|DMA_CHANNEL_DEST_SEC)!= HAL_OK )
+  {
+    Error_Handler();
+  }
 
   /* set up GPIO configuration */
+  HAL_GPIO_ConfigPinAttributes(GPIOA,GPIO_PIN_1,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOC,GPIO_PIN_0,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOC,GPIO_PIN_2,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOC,GPIO_PIN_3,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
@@ -169,6 +222,7 @@ void PeriphCommonClock_Config(void)
   HAL_GPIO_ConfigPinAttributes(GPIOE,GPIO_PIN_5,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOE,GPIO_PIN_6,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOF,GPIO_PIN_6,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
+  HAL_GPIO_ConfigPinAttributes(GPIOF,GPIO_PIN_13,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOG,GPIO_PIN_0,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOG,GPIO_PIN_8,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOG,GPIO_PIN_10,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
@@ -213,6 +267,66 @@ void PeriphCommonClock_Config(void)
   }
   #endif /* __ICCARM__ */
 
+
+
+
+
+
+/**
+ * Internal helper function to unpack data.
+ * start_idx: starting index to read from the DMA buffer.
+ */
+void Extract_ADC_Data(uint32_t start_idx)
+{
+    for (int i = 0; i < SAMPLE_WINDOW; i++)
+    {
+        uint32_t raw_index = start_idx + i;
+        uint32_t raw_data = adc_dma_buffer[raw_index];
+
+        // EXTRACTION (Bitmasking for 10-bit packed mode)
+        // ADC1 (Master) -> Bits 0-9
+        // ADC2 (Slave)  -> Bits 16-25 (usually shifted by 16)
+        adc1_extracted[i] = (uint16_t)(raw_data & 0x03FF);
+        adc2_extracted[i] = (uint16_t)((raw_data >> 16) & 0x03FF);
+    }
+}
+
+// Called when the buffer is half full (samples 0 -> 2047 are ready)
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    // Execute only for ADC1 (the DMA master)
+    if (hadc->Instance == ADC1)
+    {
+        // We want the last 10 samples of the FIRST half.
+        // End of first half = index 2048.
+        // Start = 2048 - 10 = 2038.
+        Extract_ADC_Data((ADC_DMA_BUF_SIZE / 2) - SAMPLE_WINDOW);
+        process_data_flag = 1; // Signal to main: "Half buffer data ready"
+    }
+}
+
+// Called when the buffer is completely full (samples 2048 -> 4095 are ready)
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc->Instance == ADC1)
+    {
+        // We want the last 10 samples of the SECOND half (end of buffer).
+        // End of buffer = index 4096.
+        // Start = 4096 - 10 = 4086.
+        Extract_ADC_Data(ADC_DMA_BUF_SIZE - SAMPLE_WINDOW);
+        process_data_flag = 2; // Signal to main: "End of buffer data ready"
+    }
+}
+
+
+
+
+
+
+
+
+
+  
 /* USER CODE END 4 */
 
 /**
@@ -228,7 +342,6 @@ void Error_Handler(void)
   {
     printf("APPLICATION ERROR\n\r");
     HAL_GPIO_TogglePin(RED_LED_GPIO_Port, RED_LED_Pin);
-    HAL_Delay(500);
   }
   /* USER CODE END Error_Handler_Debug */
 }

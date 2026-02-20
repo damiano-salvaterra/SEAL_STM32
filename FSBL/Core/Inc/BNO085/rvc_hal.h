@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 CEVA, Inc.
+ * Copyright 2020-21 CEVA, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License and 
@@ -15,20 +15,17 @@
  * limitations under the License.
  */
 
-/*
- * Declare init methods for sh2 HAL and DFU HAL.
- */
+// Hardware-dependent portions of RVC interface.
 
-#ifndef SH2_HAL_INIT_H
-#define SH2_HAL_INIT_H
+#ifndef RVC_HAL_H
+#define RVC_HAL_H
 
-#include "sh2_hal.h"
+#include <stdint.h>
 
-// Initialize the SHTP HAL and return a reference to it.
-sh2_Hal_t *sh2_hal_init(void);
-sh2_Hal_t *dfu_hal_init(void);
-//sh2_Hal_t *fsp200_dfu_hal_init(void);
-//sh2_Hal_t *fsp201_hal_init(void);
-//sh2_Hal_t *fsp201_dfu_hal_init(void);
+#include "rvc.h"
+
+int rvc_hal_open();
+void rvc_hal_close();
+int rvc_hal_read(rvc_SensorEvent_t *event);
 
 #endif

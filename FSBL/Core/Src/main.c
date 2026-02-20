@@ -29,6 +29,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bno08x_service.h"
+#include "rvc.h"
 #include <stdio.h>
 #include <string.h>
 /* USER CODE END Includes */
@@ -52,7 +53,7 @@ extern DMA_HandleTypeDef handle_GPDMA1_Channel0 ;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+extern UART_HandleTypeDef huart2; // Needed to read USART2 error codes and state
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,7 +80,7 @@ int iar_fputc(int ch);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void button_handler(){
-  bno08x_service();
+  rvc_service();
 }
 /* USER CODE END 0 */
 
@@ -120,23 +121,24 @@ int main(void)
   MX_XSPI2_Init();
   MX_EXTMEM_MANAGER_Init();
   SystemIsolation_Config();
-  /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start(&htim2); //start timer
+/* USER CODE BEGIN 2 */
   HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
 
-
   printf("\n\rStarting BNO085 Init...\n\r");
-  //bno08x_init();
-  printf("\n\rFSBL Init completed, executing some polling to check if the sensor is OK.\n\r");
-  printf("\n");
-  //uint8_t i = 0;
-  //while(i<60){ //poll for 15 seconds
-  //  HAL_Delay(250);
-  //  bno08x_service();
-  //  i++;
-  //}
-  printf("\n");
-  printf("\n\rFSBL check completed, BNO085 is OK.\n\r");
+  bno08x_init();
+
+  printf("\n\r--- TEST SENSOR RVC CONNECTION ---\n\r");
+
+  uint32_t start_test_time = HAL_GetTick();
+  
+  while((HAL_GetTick() - start_test_time) < 30000) //for 30 seconds
+  {
+    bno08x_service(); 
+    HAL_Delay(1000);
+  }
+  // --------------------------------------------------------
+
+  printf("\n\rFSBL Init completed, jumping to Application...\n\r");
   fflush(stdout);
   HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
 
@@ -157,7 +159,7 @@ int main(void)
   {
     	HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
 	    HAL_Delay(250);
-      //bno08x_service();
+      bno08x_service();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -365,7 +367,7 @@ void Error_Handler(void)
   {
     printf("FSBL ERROR\n\r");
     HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-    HAL_Delay(500);
+    for(volatile int j = 0; j < 5000000; j++);
   }
   /* USER CODE END Error_Handler_Debug */
 }

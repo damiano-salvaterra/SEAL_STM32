@@ -69,8 +69,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     "Core/Src/callbacks.c"
 
-    "Core/Src/BNO085/uart_hal.c"
-    "Core/Src/BNO085/bno08x_uart_hal.c"
+    "Core/Src/BNO085/rvc_hal.c"
+    "Core/Src/BNO085/rvc.c"
     "Core/Src/BNO085/bno08x_service.c"
 )
 
@@ -84,6 +84,9 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined libraries
 )
 
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
+    -u _printf_float # print float
+)
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 

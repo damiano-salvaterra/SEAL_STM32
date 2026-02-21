@@ -19,11 +19,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "gpdma.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bno08x_service.h"
+#include "rvc.h"
 #include <stdio.h>
 #include <string.h>
 /* USER CODE END Includes */
@@ -42,6 +45,7 @@
 /* USER CODE BEGIN PM */
 
 /* USER CODE END PM */
+extern DMA_HandleTypeDef handle_GPDMA1_Channel0 ;
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -70,7 +74,9 @@ int iar_fputc(int ch);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void button_handler(){
+  rvc_service();
+}
 /* USER CODE END 0 */
 
 /**
@@ -99,19 +105,34 @@ int main(void)
   MX_GPIO_Init();
   MX_GPDMA1_Init();
   MX_USART1_UART_Init();
+  MX_TIM2_Init();
+  MX_USART2_UART_Init();
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
-  printf("Application booted and initialized, entering Application main loop...\n\r");
+  HAL_TIM_Base_Start(&htim2); // timer for IMU 
+  printf("Application booted and initialized.\n\r");
 
+  printf("\n\rStarting BNO085 Init...\n\r");
+  bno08x_init();
+
+  printf("\n\r--- TEST SENSOR RVC CONNECTION ---\n\r");
+
+  uint32_t start_test_time = HAL_GetTick();
+  
+  while((HAL_GetTick() - start_test_time) < 3000) //for 3 seconds
+  {
+    bno08x_service(); 
+    HAL_Delay(100);
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
   while (1)
   {
-    HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
     printf("Looping in application main Loop.\n\r");
-	  HAL_Delay(500);
+	  HAL_Delay(5000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -155,6 +176,11 @@ void PeriphCommonClock_Config(void)
   /* RIF-Aware IPs Config */
 
   /* set up GPDMA configuration */
+  /* set GPDMA1 channel 0 used by USART2 */
+  if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel0,DMA_CHANNEL_SEC|DMA_CHANNEL_PRIV|DMA_CHANNEL_SRC_SEC|DMA_CHANNEL_DEST_SEC)!= HAL_OK )
+  {
+    Error_Handler();
+  }
 
   /* set up GPIO configuration */
   HAL_GPIO_ConfigPinAttributes(GPIOC,GPIO_PIN_0,GPIO_PIN_SEC|GPIO_PIN_NPRIV);

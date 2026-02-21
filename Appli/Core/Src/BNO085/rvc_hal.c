@@ -208,7 +208,6 @@ int rvc_hal_open(void)
     // disable interrupts
     disableInts();
 
-    HAL_TIM_Base_Start(&htim2); //start timer
 
     
     // reset part

@@ -54,11 +54,24 @@ enable_language(C ASM)
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    "Core/Inc/BNO085"
+    "sh2/Inc"
 )
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    "sh2/Src/sh2.c"
+    "sh2/Src/shtp.c"
+    "sh2/Src/sh2_SensorValue.c"
+    "sh2/Src/sh2_util.c"
+    "sh2/Src/euler.c"
+
+    "Core/Src/callbacks.c"
+
+    "Core/Src/BNO085/rvc_hal.c"
+    "Core/Src/BNO085/rvc.c"
+    "Core/Src/BNO085/bno08x_service.c"
 )
 
 # Link directories setup
@@ -71,6 +84,9 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined libraries
 )
 
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
+    -u _printf_float # print float
+)
 
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)

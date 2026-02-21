@@ -20,7 +20,6 @@
 #include "main.h"
 #include "extmem_manager.h"
 #include "gpdma.h"
-#include "tim.h"
 #include "usart.h"
 #include "xspi.h"
 #include "xspim.h"
@@ -28,8 +27,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "bno08x_service.h"
-#include "rvc.h"
 #include <stdio.h>
 #include <string.h>
 /* USER CODE END Includes */
@@ -48,7 +45,6 @@
 /* USER CODE BEGIN PM */
 
 /* USER CODE END PM */
-extern DMA_HandleTypeDef handle_GPDMA1_Channel0 ;
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -59,7 +55,6 @@ extern UART_HandleTypeDef huart2; // Needed to read USART2 error codes and state
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
-static void SystemIsolation_Config(void);
 /* USER CODE BEGIN PFP */
 #if defined(__ICCARM__)
 __ATTRIBUTES size_t __write(int, const unsigned char *, size_t);
@@ -79,9 +74,7 @@ int iar_fputc(int ch);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void button_handler(){
-  rvc_service();
-}
+
 /* USER CODE END 0 */
 
 /**
@@ -116,26 +109,13 @@ int main(void)
   MX_GPIO_Init();
   MX_GPDMA1_Init();
   MX_USART1_UART_Init();
-  MX_USART2_UART_Init();
-  MX_TIM2_Init();
   MX_XSPI2_Init();
   MX_EXTMEM_MANAGER_Init();
-  SystemIsolation_Config();
-/* USER CODE BEGIN 2 */
+  /* USER CODE BEGIN 2 */
   HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
 
-  printf("\n\rStarting BNO085 Init...\n\r");
-  bno08x_init();
 
-  printf("\n\r--- TEST SENSOR RVC CONNECTION ---\n\r");
 
-  uint32_t start_test_time = HAL_GetTick();
-  
-  while((HAL_GetTick() - start_test_time) < 30000) //for 30 seconds
-  {
-    bno08x_service(); 
-    HAL_Delay(1000);
-  }
   // --------------------------------------------------------
 
   printf("\n\rFSBL Init completed, jumping to Application...\n\r");
@@ -159,7 +139,6 @@ int main(void)
   {
     	HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
 	    HAL_Delay(250);
-      bno08x_service();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -286,39 +265,6 @@ void PeriphCommonClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief RIF Initialization Function
-  * @param None
-  * @retval None
-  */
-  static void SystemIsolation_Config(void)
-{
-
-/* USER CODE BEGIN RIF_Init 0 */
-
-/* USER CODE END RIF_Init 0 */
-
-  /* set all required IPs as secure privileged */
-  __HAL_RCC_RIFSC_CLK_ENABLE();
-
-  /* RIF-Aware IPs Config */
-
-  /* set up GPDMA configuration */
-  /* set GPDMA1 channel 0 used by USART2 */
-  if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel0,DMA_CHANNEL_SEC|DMA_CHANNEL_PRIV|DMA_CHANNEL_SRC_SEC|DMA_CHANNEL_DEST_SEC)!= HAL_OK )
-  {
-    Error_Handler();
-  }
-
-/* USER CODE BEGIN RIF_Init 1 */
-
-/* USER CODE END RIF_Init 1 */
-/* USER CODE BEGIN RIF_Init 2 */
-
-/* USER CODE END RIF_Init 2 */
-
 }
 
 /* USER CODE BEGIN 4 */

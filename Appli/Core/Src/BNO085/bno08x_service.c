@@ -79,12 +79,12 @@ void printEvent(const rvc_SensorEvent_t * event)
     // decode rvc sensor event.
     rvc_decode(&value, event);
 
-    printf("%3d : yaw:%0.2f pitch:%0.2f roll:%0.2f ax:%0.3f ay:%0.3f az:%0.3f mi:%d mr:%d\n",
+    printf("%3d | %ld : yaw:%0.2f pitch:%0.2f roll:%0.2f ax:%0.3f ay:%0.3f az:%0.3f mi:%d mr:%d\n",
            value.index,
+           value.timestamp_uS,
            value.yaw_deg,
            value.pitch_deg,
-           value.roll_deg,
-           value.acc_x_g,
+           value.roll_deg,           value.acc_x_g,
            value.acc_y_g,
            value.acc_z_g,
            value.mi,
@@ -106,7 +106,7 @@ void bno08x_init(void)
     int status;
     
     printf("\n\n");
-    printf("CEVA RVC Demo.\n");
+    printf("RVC-UART Initialization.\n");
 
     status = rvc_init();
     if (status != RVC_OK) {

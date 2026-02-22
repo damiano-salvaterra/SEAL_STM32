@@ -17,6 +17,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include "app_threadx.h"
 #include "main.h"
 #include "gpdma.h"
 #include "tim.h"
@@ -26,7 +27,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bno08x_service.h"
-#include "rvc.h"
 #include <stdio.h>
 #include <string.h>
 /* USER CODE END Includes */
@@ -74,9 +74,7 @@ int iar_fputc(int ch);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void button_handler(){
-  rvc_service();
-}
+
 /* USER CODE END 0 */
 
 /**
@@ -112,50 +110,28 @@ int main(void)
   HAL_TIM_Base_Start(&htim2); // timer for IMU 
   printf("Application booted and initialized.\n\r");
 
-  printf("\n\rStarting BNO085 Init...\n\r");
+  printf("\n\rInitializing BNO085...\n\r");
   bno08x_init();
+  printf("\n\rBNO085 Initialized and OK.\n\r");
 
-  printf("\n\r--- TEST SENSOR RVC CONNECTION ---\n\r");
-
-  uint32_t start_test_time = HAL_GetTick();
-  
-  while((HAL_GetTick() - start_test_time) < 3000) //for 3 seconds
-  {
-    bno08x_service(); 
-    HAL_Delay(100);
-  }
   /* USER CODE END 2 */
+  printf("\n\rBooting ThreadX Kernel, passing control to RTOS...\n\r");
+  MX_ThreadX_Init();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin);
   while (1)
   {
-    printf("Looping in application main Loop.\n\r");
-	  HAL_Delay(5000);
+    HAL_GPIO_TogglePin(RED_LED_GPIO_Port, RED_LED_Pin);
+    printf("[ERROR]: Did not enter in ThreadX Kernel, looping in Appli main loop\n\r");
+	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
-}
-
-/**
-  * @brief Peripherals Common Clock Configuration
-  * @retval None
-  */
-void PeriphCommonClock_Config(void)
-{
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-
-  /** Initializes the peripherals clock
-  */
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_TIM;
-  PeriphClkInitStruct.TIMPresSelection = RCC_TIMPRES_DIV4;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
 }
 
 /**
@@ -241,6 +217,28 @@ void PeriphCommonClock_Config(void)
 /* USER CODE END 4 */
 
 /**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6)
+  {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
+
+/**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
@@ -253,7 +251,7 @@ void Error_Handler(void)
   {
     printf("APPLICATION ERROR\n\r");
     HAL_GPIO_TogglePin(RED_LED_GPIO_Port, RED_LED_Pin);
-    HAL_Delay(500);
+    for(int i=0; i<5000000; i++); 
   }
   /* USER CODE END Error_Handler_Debug */
 }

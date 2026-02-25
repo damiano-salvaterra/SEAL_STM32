@@ -108,19 +108,10 @@ int main(void)
   MX_XSPI2_Init();
   MX_EXTMEM_MANAGER_Init();
   /* USER CODE BEGIN 2 */
-  HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-
-
 
   // --------------------------------------------------------
 
-  printf("\n\rFSBL Init completed, jumping to Application...\n\r");
-  fflush(stdout);
-  HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-
   /* USER CODE END 2 */
-
-  /* We should never get here as control is now taken by the scheduler */
 
   /* Launch the application */
   if (BOOT_OK != BOOT_Application())
@@ -130,13 +121,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     
-  printf("Entering FSBL main loop...");
-  fflush(stdout);
-
   while (1)
   {
-    	HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-	    HAL_Delay(250);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -55,6 +55,9 @@ enable_language(C ASM)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     "Core/Inc/BNO085"
+    "Core/Inc/rtos_app"
+    "Core/Inc/rtos_app/hw_interface"
+
     "sh2/Inc"
 )
 
@@ -72,6 +75,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     "Core/Src/BNO085/rvc_hal.c"
     "Core/Src/BNO085/rvc.c"
     "Core/Src/BNO085/bno08x_service.c"
+
+    "Core/Src/rtos_app/sys_logger.c"
+    "Core/Src/rtos_app/sys_manager.c"
+
 )
 
 # Link directories setup

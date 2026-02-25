@@ -18,7 +18,8 @@
 #ifndef BNO08X_APP_H
 #define BNO08X_APP_H
 
-void bno08x_init(void);
+uint8_t bno08x_init(void);
 void bno08x_service(void);
-    
+void bno08x_close();
+
 #endif

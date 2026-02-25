@@ -101,7 +101,7 @@ printEvent(pEvent);
 // --- Public methods -------------------------------------------------
 
 // Initialize 
-void bno08x_init(void)
+uint8_t bno08x_init(void)
 {
     int status;
     
@@ -122,6 +122,9 @@ void bno08x_init(void)
     if (status != RVC_OK) {
         printf("Error, %d, from rvc_open.\n", status);
     }
+
+    //return some number if there is an error, return 0 (RVC_OK) if it is OK
+    return (uint8_t) status;
 }
 
 // This must be called periodically.  (The demo main calls it continuously in a loop.)
@@ -133,4 +136,7 @@ void bno08x_service(void)
 }
 
 
-
+void bno08x_close()
+{
+    rvc_close();
+}

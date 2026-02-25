@@ -25,7 +25,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin){
     if(GPIO_Pin == USR_BTN_Pin)
     {
-        tx_semaphore_put(&bno_service_semaphore);
+        //tx_semaphore_put(&bno_service_semaphore);
     }
 }
 

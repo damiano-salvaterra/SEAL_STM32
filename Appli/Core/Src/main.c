@@ -26,7 +26,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "bno08x_service.h"
 #include <stdio.h>
 #include <string.h>
 /* USER CODE END Includes */
@@ -107,12 +106,7 @@ int main(void)
   MX_USART2_UART_Init();
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start(&htim2); // timer for IMU 
   printf("Application booted and initialized.\n\r");
-
-  printf("\n\rInitializing BNO085...\n\r");
-  bno08x_init();
-  printf("\n\rBNO085 Initialized and OK.\n\r");
 
   /* USER CODE END 2 */
   printf("\n\rBooting ThreadX Kernel, passing control to RTOS...\n\r");

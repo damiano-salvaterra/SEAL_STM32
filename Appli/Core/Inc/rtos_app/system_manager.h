@@ -1,10 +1,8 @@
 #ifndef SYS_MANAGER_H
 #define SYS_MANAGER_H
 
-#include "system_config.h"
 #include "tx_api.h"
-
-
+#include "system_config.h"
 
 UINT SystemManager_Init(void);
 

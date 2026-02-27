@@ -13,4 +13,8 @@ Send a log to the logger as you do with printf
 */
 void System_Log(const char *format, ...);
 
+void SysLogger_Enable(void);
+void SysLogger_Disable(void);
+
+
 #endif

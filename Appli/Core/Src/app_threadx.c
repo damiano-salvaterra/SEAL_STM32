@@ -20,8 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "app_threadx.h"
-#include "dsp.h"
 #include "tx_api.h"
+#include "system_config.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -30,7 +30,8 @@
 #include "sys_logger.h"
 #include "system_manager.h"
 #include "imu_manager.h"
-#include "system_config.h"
+#include "processing.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,15 +69,18 @@ UINT App_ThreadX_Init(VOID *memory_ptr)
   /* USER CODE END App_ThreadX_MEM_POOL */
 
   /* USER CODE BEGIN App_ThreadX_Init */
+
   //first of all start the logger
   SysLogger_Init();
+  SysLogger_Enable(); //enable logging
+
   System_Log("[ThreadXInit] INFO: System Logger successfully started.");
 
   IMUManager_Init();
   SystemManager_Init();
 
-  DSP_config_t default_dsp_config;
-  memset(&default_dsp_config, 0, sizeof(DSP_config_t)); //just set it to zero for now
+  processing_config_t default_dsp_config;
+  memset(&default_dsp_config, 0, sizeof(processing_config_t)); //just set it to zero for now
 
   IMU_config_t default_imu_config = {.imu_turn_on = true, .protocol = UART_RVC, .polling_time_ms = 0};
 

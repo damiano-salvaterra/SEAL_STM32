@@ -18,14 +18,17 @@ typedef struct{
 
 
 #define IMU_MANAGER_STACK_SIZE 512
-#define IMU_MANAGER_QUEUE_SIZE (sizeof(IMU_config_t)*2) //message queue size for changing configuration. keep a queue of 2 messages just for safety (should be enough one)
+#define IMU_QUEUE_CAPACITY      2
+#define IMU_MESSAGE_SIZE        TX_4_ULONG
+#define IMU_QUEUE_MEM_SIZE      (16 * IMU_QUEUE_CAPACITY)
+
 
 TX_QUEUE imu_manager_queue;
 TX_THREAD imu_manager_thread;
 
 
-uint8_t imu_queue_memory[IMU_MANAGER_QUEUE_SIZE];
-uint8_t imu_manager_stack[IMU_MANAGER_STACK_SIZE];
+ULONG imu_queue_memory[IMU_QUEUE_MEM_SIZE / sizeof(ULONG)];
+ULONG imu_manager_stack[IMU_MANAGER_STACK_SIZE / sizeof(ULONG)];
 
 
 void imu_init(IMU_state_t* state, IMU_config_t* config)
@@ -58,15 +61,17 @@ void imu_close(IMU_state_t* state, IMU_config_t* config)
 VOID imu_manager_thread_entry(ULONG initial_input)
 {
     TX_PARAMETER_NOT_USED(initial_input);
-    IMU_config_t last_config;
+    IMU_config_t current_config;
+    ULONG rx_buffer[4]; // Exact size of TX_4_ULONG (16 bytes)
     IMU_state_t state = {.is_on = false, .protocol = NO_PROTO, .polling_time_ms = 0};
 
     //clear config
-    memset(&last_config, 0, sizeof(last_config));
+    memset(&current_config, 0, sizeof(current_config));
 
     while(1)
     {
-        tx_queue_receive(&imu_manager_queue, &last_config, TX_WAIT_FOREVER);
+        tx_queue_receive(&imu_manager_queue, rx_buffer, TX_WAIT_FOREVER);
+        memcpy(&current_config, rx_buffer, sizeof(IMU_config_t));
 
         System_Log(
                 "[IMUManager] INFO: new IMU configuration received\r\n"
@@ -75,15 +80,15 @@ VOID imu_manager_thread_entry(ULONG initial_input)
                 state.is_on,
                 state.protocol,
                 state.polling_time_ms,
-                last_config.imu_turn_on,
-                last_config.protocol,
-                last_config.polling_time_ms
+                current_config.imu_turn_on,
+                current_config.protocol,
+                current_config.polling_time_ms
                 );
 
-        if(last_config.imu_turn_on)
-            imu_init(&state, &last_config);
+        if(current_config.imu_turn_on)
+            imu_init(&state, &current_config);
         else
-            imu_close(&state, &last_config);
+            imu_close(&state, &current_config);
 
         /*
         For future expansion, manage also other configurations (protocol and polling time)
@@ -97,10 +102,9 @@ VOID imu_manager_thread_entry(ULONG initial_input)
 UINT IMUManager_Init()
 {
     //create queue to send configurations
-    tx_queue_create(&imu_manager_queue, "IMU_Queue", sizeof(IMU_config_t), imu_queue_memory, sizeof(imu_queue_memory));
-
+    tx_queue_create(&imu_manager_queue, "IMU_Queue", IMU_MESSAGE_SIZE, imu_queue_memory, IMU_QUEUE_MEM_SIZE);
     //create thread
-    tx_thread_create(&imu_manager_thread, "IMU_Thread", imu_manager_thread_entry, 0, imu_manager_stack, IMU_MANAGER_STACK_SIZE, 25, 25, 1, TX_AUTO_START);
+    tx_thread_create(&imu_manager_thread, "IMU_Thread", imu_manager_thread_entry, 0, imu_manager_stack, IMU_MANAGER_STACK_SIZE, 8, 8, 1, TX_AUTO_START);
 
     return TX_SUCCESS;
 
@@ -108,5 +112,7 @@ UINT IMUManager_Init()
 
 void IMU_Send_Config(IMU_config_t* config)
 {
-    tx_queue_send(&imu_manager_queue, config, TX_NO_WAIT);
+    ULONG tx_buffer[4] = {0}; // Initialize all 16 bytes to zero
+    memcpy(tx_buffer, config, sizeof(IMU_config_t)); // Copy the valid 12 bytes
+    tx_queue_send(&imu_manager_queue, tx_buffer, TX_NO_WAIT);
 }

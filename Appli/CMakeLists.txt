@@ -77,7 +77,14 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     "Core/Src/BNO085/bno08x_service.c"
 
     "Core/Src/rtos_app/sys_logger.c"
-    "Core/Src/rtos_app/sys_manager.c"
+    "Core/Src/rtos_app/system_manager.c"
+    "Core/Src/rtos_app/imu_manager.c"
+
+    "Core/Src/rtos_app/hw_interface/imu.c"
+    "Core/Src/rtos_app/hw_interface/hw_timers.c"
+
+
+
 
 )
 

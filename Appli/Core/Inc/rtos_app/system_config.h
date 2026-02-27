@@ -1,4 +1,4 @@
-#ifndef SYSSTEM_CONFIG_H
+#ifndef SYSTEM_CONFIG_H
 #define SYSTEM_CONFIG_H
 #include "dsp.h"
 #include "imu_manager.h"

@@ -1,6 +1,7 @@
 #ifndef IMU_MANAGER_H
 #define IMU_MANAGER_H
 
+#include "tx_api.h"
 #include <stdbool.h>
 #include <stdint.h>
 

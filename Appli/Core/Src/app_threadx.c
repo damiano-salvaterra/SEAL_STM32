@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "app_threadx.h"
+#include "dsp.h"
 #include "tx_api.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -27,6 +28,9 @@
 #include <stdio.h>
 #include "bno08x_service.h"
 #include "sys_logger.h"
+#include "system_manager.h"
+#include "imu_manager.h"
+#include "system_config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +72,18 @@ UINT App_ThreadX_Init(VOID *memory_ptr)
   SysLogger_Init();
   System_Log("[ThreadXInit] INFO: System Logger successfully started.");
 
-  //HAL_TIM_Base_Start(&htim2); // timer for IMU 
+  IMUManager_Init();
+  SystemManager_Init();
+
+  DSP_config_t default_dsp_config;
+  memset(&default_dsp_config, 0, sizeof(DSP_config_t)); //just set it to zero for now
+
+  IMU_config_t default_imu_config = {.imu_turn_on = true, .protocol = UART_RVC, .polling_time_ms = 0};
+
+  SystemConfig_t default_system_config = {.dsp_config = default_dsp_config, .imu_config = default_imu_config};
+  
+  //send default config
+  System_Send_Config(&default_system_config);
 
   /* USER CODE END App_ThreadX_Init */
 

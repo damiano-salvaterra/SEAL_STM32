@@ -101,7 +101,7 @@ printEvent(pEvent);
 // --- Public methods -------------------------------------------------
 
 // Initialize 
-uint8_t bno08x_init(void)
+uint8_t bno08x_RVC_init(void)
 {
     int status;
     
@@ -136,7 +136,7 @@ void bno08x_service(void)
 }
 
 
-void bno08x_close()
+void bno08x_RVC_close()
 {
     rvc_close();
 }

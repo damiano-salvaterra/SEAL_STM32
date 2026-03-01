@@ -17,7 +17,7 @@ typedef struct{
 } IMU_state_t;
 
 
-#define IMU_MANAGER_STACK_SIZE 512
+#define IMU_MANAGER_STACK_SIZE 1024
 #define IMU_QUEUE_CAPACITY      2
 #define IMU_MESSAGE_SIZE        TX_4_ULONG
 #define IMU_QUEUE_MEM_SIZE      (16 * IMU_QUEUE_CAPACITY)

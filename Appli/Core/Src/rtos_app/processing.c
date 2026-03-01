@@ -4,12 +4,13 @@
 #include "imu.h"
 
 
-#define PROCESSING_STACK_SIZE 4096
+#define PROCESSING_STACK_SIZE 2048
+
+#define PROCESSING_MESSAGE_WORDS  ((sizeof(processing_config_t) + 3) / 4)
 
 #define PROCESSING_QUEUE_CAPACITY 2
-#define PROCESSING_MESSAGE_SIZE   TX_2_ULONG //TODO: to be modified when actually implemented
-#define PROCESSING_QUEUE_MEM_SIZE (8 * PROCESSING_QUEUE_CAPACITY)
 
+#define PROCESSING_QUEUE_MEM_SIZE (PROCESSING_MESSAGE_WORDS * 4 * PROCESSING_QUEUE_CAPACITY)
 #define PROCESSING_EVENT_CONFIG   (1UL << 0)
 #define PROCESSING_EVENT_RUN      (1UL << 1)
 
@@ -39,9 +40,13 @@ VOID processing_thread_entry(ULONG initial_input)
 
         if(flags & PROCESSING_EVENT_CONFIG)
         {
+            ULONG rx_buffer[PROCESSING_MESSAGE_WORDS];
+
             //drain the queue totally
             while(tx_queue_receive(&processing_thread_queue, &current_config, TX_NO_WAIT)==TX_SUCCESS)
             {
+                memcpy(&current_config, rx_buffer, sizeof(processing_config_t));
+                
                 System_Log(
                 "[ProcessingThread] INFO: new DSP configuration received\r\n"
                 "                   New Config    -> foo: %d, bar: %d\r\n",
@@ -70,8 +75,10 @@ UINT Processing_Init(void)
     tx_event_flags_create(&processing_events, "ProcessingEvents");
 
     //create queue to send configurations
-    tx_queue_create(&processing_thread_queue, "Processing_Queue",  PROCESSING_MESSAGE_SIZE, processing_thread_queue_memory, PROCESSING_QUEUE_MEM_SIZE);
-    //create thread
+    tx_queue_create(&processing_thread_queue, "Processing_Queue", 
+                        PROCESSING_MESSAGE_WORDS, 
+                        processing_thread_queue_memory, 
+                        PROCESSING_QUEUE_MEM_SIZE);    //create thread
     tx_thread_create(&processing_thread, "Processing_Thread", processing_thread_entry, 0, processing_thread_stack, PROCESSING_STACK_SIZE, 6, 6, 1, TX_AUTO_START);
 
     return TX_SUCCESS;
@@ -82,9 +89,16 @@ UINT Processing_Init(void)
 
 void Processing_Send_Config(processing_config_t* config)
 {
-    tx_queue_send(&processing_thread_queue, config, TX_NO_WAIT);
+    // Create a local buffer sized correctly for ThreadX, initialized to 0
+    ULONG tx_buffer[PROCESSING_MESSAGE_WORDS] = {0}; 
+    
+    // Copy the actual struct bytes into our padded buffer
+    memcpy(tx_buffer, config, sizeof(processing_config_t)); 
 
-    //this thread waits on the event flags
+    // Send the buffer instead of the struct pointer
+    tx_queue_send(&processing_thread_queue, tx_buffer, TX_NO_WAIT);
+
+    // Set the event flag
     tx_event_flags_set(&processing_events, PROCESSING_EVENT_CONFIG, TX_OR);
 }
 

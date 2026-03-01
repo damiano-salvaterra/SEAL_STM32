@@ -8,14 +8,13 @@
 
 #define MAX_LOG_ARGS 16
 
-typedef struct {
-    const char* format;
-    uint32_t args[MAX_LOG_ARGS];
-} deferred_log_msg_t;
+//typedef struct {
+//    const char* format;
+//    uint32_t args[MAX_LOG_ARGS];
+//} deferred_log_msg_t;
 
-// 4 bytes for format pointer + (6 * 4 bytes for args) = 28 bytes.
-// Rounding to 32 bytes for alignment.
-#define LOG_BLOCK_SIZE     68
+
+#define LOG_BLOCK_SIZE     256 //TODO: check if this can be reduced
 
 #define LOG_POOL_BLOCKS    20    //max log queue
 #define LOGGER_STACK_SIZE  2048
@@ -62,6 +61,7 @@ VOID logger_thread_entry(ULONG initial_input)
         if(flags & LOGGER_EVENT_DISABLE)
             logging_enabled = 0;
 
+        /*
         if(flags & LOGGER_EVENT_MESSAGE)
         {
             deferred_log_msg_t *msg;
@@ -75,6 +75,23 @@ VOID logger_thread_entry(ULONG initial_input)
                            msg->args[8],  msg->args[9],  msg->args[10], msg->args[11], 
                            msg->args[12], msg->args[13], msg->args[14], msg->args[15]);
                 tx_block_release(msg); //release memory block at pointer msg
+            }
+        }
+            */
+        if(flags & LOGGER_EVENT_MESSAGE)
+        {
+            char *msg; // receive pointer to string
+            
+            // Drain queue
+            while(tx_queue_receive(&log_queue, &msg, TX_NO_WAIT) == TX_SUCCESS)
+            {
+                if(logging_enabled) {
+                    // print formatted string
+                    printf("%s", msg);
+                }
+                
+                // free memory block
+                tx_block_release(msg); 
             }
         }
     }
@@ -98,6 +115,48 @@ UINT SysLogger_Init(void)
 
     return TX_SUCCESS;
 }
+
+
+void System_Log(const char* format, ...)
+{
+    char *allocated_block = NULL;
+
+    // Allochiamo un blocco di memoria dal pool
+    if(tx_block_allocate(&log_pool, (VOID**)&allocated_block, TX_NO_WAIT) == TX_SUCCESS)
+    {
+        // Formattiamo la stringa IN MODO SICURO gestendo correttamente float e 64-bit!
+        va_list args;
+        va_start(args, format);
+        vsnprintf(allocated_block, LOG_BLOCK_SIZE, format, args);
+        va_end(args);
+
+        // Invia il PUNTATORE alla stringa già formattata alla coda
+        if(tx_queue_send(&log_queue, &allocated_block, TX_NO_WAIT) != TX_SUCCESS)
+            tx_block_release(allocated_block); // Coda piena, droppa il log e libera memoria
+        else
+            tx_event_flags_set(&logger_events, LOGGER_EVENT_MESSAGE, TX_OR);
+    }
+}
+/*
+Public API to enable logging
+*/
+void SysLogger_Enable(void)
+{
+    tx_event_flags_set(&logger_events, LOGGER_EVENT_ENABLE, TX_OR);
+}
+
+
+/*
+Public API to disable logging
+*/
+void SysLogger_Disable(void)
+{
+    tx_event_flags_set(&logger_events, LOGGER_EVENT_DISABLE, TX_OR);
+}
+
+
+
+
 
 /*
 void System_Log(const char* format, ...)
@@ -124,6 +183,7 @@ void System_Log(const char* format, ...)
 }
 */
 
+/*
 void System_Log(const char* format, ...) 
 {
     deferred_log_msg_t *msg = NULL;
@@ -166,19 +226,4 @@ void System_Log(const char* format, ...)
         }
     }
 }
-/*
-Public API to enable logging
 */
-void SysLogger_Enable(void)
-{
-    tx_event_flags_set(&logger_events, LOGGER_EVENT_ENABLE, TX_OR);
-}
-
-
-/*
-Public API to disable logging
-*/
-void SysLogger_Disable(void)
-{
-    tx_event_flags_set(&logger_events, LOGGER_EVENT_DISABLE, TX_OR);
-}

@@ -70,10 +70,14 @@ VOID processing_thread_entry(ULONG initial_input)
             System_Log("[ProcessingThread] INFO: Extracted %d frames.\n\r", fetched_frames);
             
             for (uint8_t i = 0; i < fetched_frames; i++) {
-                System_Log("  -> Frame %d [Time: %llu us, Idx: %d] | Yaw: %.2f, Pitch: %.2f, Roll: %.2f | AccX: %.3f, AccY: %.3f, AccZ: %.3f\n\r",
+                
+                // Force value to uint_32 for printing
+                uint32_t time_us = (uint32_t)imu_data[i].timestamp_uS;
+                uint32_t index   = (uint32_t)imu_data[i].index;
+                System_Log("  -> Frame %d [Time: %lu us, Idx: %lu] | Yaw: %.2f, Pitch: %.2f, Roll: %.2f | AccX: %.3f, AccY: %.3f, AccZ: %.3f\n\r",
                     i, 
-                    (unsigned long long)imu_data[i].timestamp_uS,
-                    imu_data[i].index,
+                    time_us,
+                    index,
                     imu_data[i].yaw_deg,
                     imu_data[i].pitch_deg,
                     imu_data[i].roll_deg,

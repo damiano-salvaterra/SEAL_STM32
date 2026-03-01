@@ -74,7 +74,7 @@ UINT App_ThreadX_Init(VOID *memory_ptr)
   SysLogger_Init();
   SysLogger_Enable(); //enable logging
 
-  System_Log("[ThreadXInit] INFO: System Logger successfully started.");
+  System_Log("[ThreadXInit] INFO: System Logger successfully started.\n\r");
 
   IMUManager_Init();
   SystemManager_Init();

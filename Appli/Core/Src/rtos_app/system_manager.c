@@ -46,7 +46,7 @@ VOID system_manager_thread_entry(ULONG initial_input)
         tx_queue_receive(&system_manager_queue, rx_buffer, TX_WAIT_FOREVER);
         memcpy(&system_config, rx_buffer, sizeof(SystemConfig_t));
 
-        System_Log("[SystemManager] INFO: New configuration received.");
+        System_Log("[SystemManager] INFO: New configuration received.\n\r");
 
         //TODO: Implement logic to change configurations
 
@@ -55,7 +55,7 @@ VOID system_manager_thread_entry(ULONG initial_input)
         if(!IMU_config_equal(&system_config.imu_config, &old_config.imu_config))
         {
             IMU_Send_Config(&system_config.imu_config);
-            System_Log("[SystemManager] INFO: Sending new configuration to IMU.");
+            System_Log("[SystemManager] INFO: Sending new configuration to IMU.\n\r");
         }
 
         //TODO:do the same with the DSP config

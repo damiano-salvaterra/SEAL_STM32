@@ -4,7 +4,7 @@
 #include "imu.h"
 
 
-#define PROCESSING_STACK_SIZE 2048
+#define PROCESSING_STACK_SIZE 4096
 
 #define PROCESSING_MESSAGE_WORDS  ((sizeof(processing_config_t) + 3) / 4)
 
@@ -20,6 +20,8 @@ TX_THREAD processing_thread;
 
 ULONG processing_thread_queue_memory[PROCESSING_QUEUE_MEM_SIZE / sizeof(ULONG)];
 ULONG processing_thread_stack[PROCESSING_STACK_SIZE / sizeof(ULONG)];
+
+#define FRAMES_TO_READ 5
 
 
 
@@ -43,10 +45,10 @@ VOID processing_thread_entry(ULONG initial_input)
             ULONG rx_buffer[PROCESSING_MESSAGE_WORDS];
 
             //drain the queue totally
-            while(tx_queue_receive(&processing_thread_queue, &current_config, TX_NO_WAIT)==TX_SUCCESS)
+            while(tx_queue_receive(&processing_thread_queue, rx_buffer, TX_NO_WAIT) == TX_SUCCESS)
             {
                 memcpy(&current_config, rx_buffer, sizeof(processing_config_t));
-                
+
                 System_Log(
                 "[ProcessingThread] INFO: new DSP configuration received\r\n"
                 "                   New Config    -> foo: %d, bar: %d\r\n",
@@ -59,7 +61,27 @@ VOID processing_thread_entry(ULONG initial_input)
         if (flags & PROCESSING_EVENT_RUN)
         {
             System_Log("[ProcessingThread] INFO: processing trigger received.\n\r");
-            imu_get_data();
+            
+            IMUValue_t imu_data[FRAMES_TO_READ];
+            uint8_t fetched_frames = 0;
+
+            imu_get_data(FRAMES_TO_READ, imu_data, &fetched_frames);
+            
+            System_Log("[ProcessingThread] INFO: Extracted %d frames.\n\r", fetched_frames);
+            
+            for (uint8_t i = 0; i < fetched_frames; i++) {
+                System_Log("  -> Frame %d [Time: %llu us, Idx: %d] | Yaw: %.2f, Pitch: %.2f, Roll: %.2f | AccX: %.3f, AccY: %.3f, AccZ: %.3f\n\r",
+                    i, 
+                    (unsigned long long)imu_data[i].timestamp_uS,
+                    imu_data[i].index,
+                    imu_data[i].yaw_deg,
+                    imu_data[i].pitch_deg,
+                    imu_data[i].roll_deg,
+                    imu_data[i].acc_x_g,
+                    imu_data[i].acc_y_g,
+                    imu_data[i].acc_z_g
+                );
+            }
         }
                 
 

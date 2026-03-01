@@ -38,6 +38,13 @@ VOID system_manager_thread_entry(ULONG initial_input)
     ULONG rx_buffer[8]; // Exact size of TX_8_ULONG (32 bytes). THe message received are 16 bytes, if we cast them directly in the struct (12 bytes, we smash other variables in the stack)
     memset(&system_config, 0, sizeof(SystemConfig_t));
 
+    //system_config.imu_config.imu_turn_on = true;
+    //system_config.imu_config.protocol = UART_RVC;
+    //system_config.imu_config.polling_time_ms = 0;
+
+    System_Log("[SystemManager] INFO: Sending BOOT configuration to IMU.\n\r");
+    IMU_Send_Config(&system_config.imu_config);
+
     while(1)
     {
         SystemConfig_t old_config = system_config;

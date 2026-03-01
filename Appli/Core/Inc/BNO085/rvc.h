@@ -80,10 +80,7 @@ typedef void rvc_Callback_t(void *cookie, rvc_SensorEvent_t *pEvent);
 // Public API calls used by demo_rvc.c
 
 // Initialize the RVC sensor hub module
-int rvc_init();
-
-// Application registers callback function to receive sensor events
-int rvc_setCallback(rvc_Callback_t *callback, void * cookie);
+//int rvc_init();
 
 // Open starts the flow of sensor events from the sensor hub.
 int rvc_open();
@@ -94,8 +91,8 @@ void rvc_close();
 // Service performs periodic servicing of the sensor hub interface.
 // This reads the UART data and should be called frequently to keep
 // communications flowing.
-void rvc_service();
-
+//reads till max framse from DMA and put them in the buffer. Returns the number of read frames
+uint8_t rvc_service(uint8_t max_frames, rvc_SensorValue_t* out_buffer);
 // Convert data from integers, fixed point to floating point, natural units.
 void rvc_decode(rvc_SensorValue_t *value, const rvc_SensorEvent_t *event);
 

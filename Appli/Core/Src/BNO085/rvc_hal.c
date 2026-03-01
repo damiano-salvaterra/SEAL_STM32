@@ -259,7 +259,6 @@ void rvc_hal_close(void)
     __HAL_DMA_DISABLE(&handle_GPDMA1_Channel0);
 
     // disable timer
-    __HAL_TIM_DISABLE(&htim2);
     
     isOpen = false;
 }

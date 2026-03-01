@@ -1,0 +1,134 @@
+#include "processing.h"
+#include "sys_logger.h"
+#include "tx_api.h"
+#include "imu.h"
+
+
+#define PROCESSING_STACK_SIZE 4096
+
+#define PROCESSING_MESSAGE_WORDS  ((sizeof(processing_config_t) + 3) / 4)
+
+#define PROCESSING_QUEUE_CAPACITY 2
+
+#define PROCESSING_QUEUE_MEM_SIZE (PROCESSING_MESSAGE_WORDS * 4 * PROCESSING_QUEUE_CAPACITY)
+#define PROCESSING_EVENT_CONFIG   (1UL << 0)
+#define PROCESSING_EVENT_RUN      (1UL << 1)
+
+TX_EVENT_FLAGS_GROUP processing_events;
+TX_QUEUE processing_thread_queue;
+TX_THREAD processing_thread;
+
+ULONG processing_thread_queue_memory[PROCESSING_QUEUE_MEM_SIZE / sizeof(ULONG)];
+ULONG processing_thread_stack[PROCESSING_STACK_SIZE / sizeof(ULONG)];
+
+#define FRAMES_TO_READ 5
+
+
+
+VOID processing_thread_entry(ULONG initial_input)
+{
+    TX_PARAMETER_NOT_USED(initial_input);
+
+    processing_config_t current_config;
+    ULONG flags = 0;
+
+    //clear config
+    memset(&current_config, 0, sizeof(current_config));
+
+    while(1)
+    {
+        tx_event_flags_get(&processing_events, PROCESSING_EVENT_CONFIG | PROCESSING_EVENT_RUN,
+                            TX_OR_CLEAR, &flags, TX_WAIT_FOREVER);
+
+        if(flags & PROCESSING_EVENT_CONFIG)
+        {
+            ULONG rx_buffer[PROCESSING_MESSAGE_WORDS];
+
+            //drain the queue totally
+            while(tx_queue_receive(&processing_thread_queue, rx_buffer, TX_NO_WAIT) == TX_SUCCESS)
+            {
+                memcpy(&current_config, rx_buffer, sizeof(processing_config_t));
+
+                System_Log(
+                "[ProcessingThread] INFO: new DSP configuration received\r\n"
+                "                   New Config    -> foo: %d, bar: %d\r\n",
+                current_config.foo,
+                current_config.bar
+                );
+            }
+        }
+
+        if (flags & PROCESSING_EVENT_RUN)
+        {
+            System_Log("[ProcessingThread] INFO: processing trigger received.\n\r");
+            
+            IMUValue_t imu_data[FRAMES_TO_READ];
+            uint8_t fetched_frames = 0;
+
+            imu_get_data(FRAMES_TO_READ, imu_data, &fetched_frames);
+            
+            System_Log("[ProcessingThread] INFO: Extracted %d frames.\n\r", fetched_frames);
+            
+            for (uint8_t i = 0; i < fetched_frames; i++) {
+                
+                // Force value to uint_32 for printing
+                uint32_t time_us = (uint32_t)imu_data[i].timestamp_uS;
+                uint32_t index   = (uint32_t)imu_data[i].index;
+                System_Log("  -> Frame %d [Time: %lu us, Idx: %lu] | Yaw: %.2f, Pitch: %.2f, Roll: %.2f | AccX: %.3f, AccY: %.3f, AccZ: %.3f\n\r",
+                    i, 
+                    time_us,
+                    index,
+                    imu_data[i].yaw_deg,
+                    imu_data[i].pitch_deg,
+                    imu_data[i].roll_deg,
+                    imu_data[i].acc_x_g,
+                    imu_data[i].acc_y_g,
+                    imu_data[i].acc_z_g
+                );
+            }
+        }
+                
+
+    }
+
+}
+
+
+
+UINT Processing_Init(void)
+{
+    //create event flags to separate configurations from processing triggers
+    tx_event_flags_create(&processing_events, "ProcessingEvents");
+
+    //create queue to send configurations
+    tx_queue_create(&processing_thread_queue, "Processing_Queue", 
+                        PROCESSING_MESSAGE_WORDS, 
+                        processing_thread_queue_memory, 
+                        PROCESSING_QUEUE_MEM_SIZE);    //create thread
+    tx_thread_create(&processing_thread, "Processing_Thread", processing_thread_entry, 0, processing_thread_stack, PROCESSING_STACK_SIZE, 6, 6, 1, TX_AUTO_START);
+
+    return TX_SUCCESS;
+
+}
+
+
+
+void Processing_Send_Config(processing_config_t* config)
+{
+    // Create a local buffer sized correctly for ThreadX, initialized to 0
+    ULONG tx_buffer[PROCESSING_MESSAGE_WORDS] = {0}; 
+    
+    // Copy the actual struct bytes into our padded buffer
+    memcpy(tx_buffer, config, sizeof(processing_config_t)); 
+
+    // Send the buffer instead of the struct pointer
+    tx_queue_send(&processing_thread_queue, tx_buffer, TX_NO_WAIT);
+
+    // Set the event flag
+    tx_event_flags_set(&processing_events, PROCESSING_EVENT_CONFIG, TX_OR);
+}
+
+void Processing_Trigger_Run(void){
+    tx_event_flags_set(&processing_events, PROCESSING_EVENT_RUN, TX_OR);
+
+}

@@ -21,29 +21,15 @@
 #include "rvc.h"
 #include "rvc_hal.h"
 
-static rvc_Callback_t * pRvcCallback = 0;
-void * rvcCookie = 0;
 
 rvc_SensorEvent_t sensorEvent;
 
 // initialize RVC subsystem
-int rvc_init()
-{
-    // Clear callback registration
-    pRvcCallback = 0;
-    rvcCookie = 0;
+//int rvc_init()
+//{
+//    return RVC_OK;
+//}
 
-    return RVC_OK;
-}
-
-// register a sensor callback function with the RVC subsystem
-int rvc_setCallback(rvc_Callback_t *pCallback, void * cookie)
-{
-    pRvcCallback = pCallback;
-    rvcCookie = cookie;
-
-    return RVC_OK;
-}
 
 // open the RVC interface (starts sensor events)
 int rvc_open()
@@ -62,25 +48,34 @@ void rvc_close()
 // periodically service the RVC subsystem.
 // must be called periodically to service the RVC UART, parse RVC messages
 // and call the RVC callback on each sensor event.
-void rvc_service()
-{
+uint8_t rvc_service(uint8_t max_frames, rvc_SensorValue_t* out_buffer){
     rvc_SensorEvent_t event;
-    
+    uint8_t count = 0;
     bool done = false;
-    while (!done) {
+    
+    while (!done && (count < max_frames)) {
+        
+        // Read a single frame 
         int status = rvc_hal_read(&event);
 
         if (status > 0) {
-            // we have a frame
-            if (pRvcCallback != NULL) {
-                // Deliver this event to the RVC client
-                pRvcCallback(rvcCookie, &event);
+            // we have a valid frame
+            
+        
+            //if the passed array is valid, directly decode the data and put the in the array
+            if (out_buffer != NULL) {
+                rvc_decode(&out_buffer[count], &event);
             }
+            
+            count++;
+            
         }
         else {
             done = true;
         }
     }
+    
+    return count;
 }
 
 // Convert from SensorEvent (integer, fixed-point representation)

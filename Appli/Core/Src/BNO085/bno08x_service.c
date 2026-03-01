@@ -32,105 +32,58 @@
 
 // --- Private methods --------------------------------------------------
 
-// Print headers for DSF format output
-void printDsfHeaders(void)
-{
-    printf("+0 TIME[x]{us},SAMPLE_ID[x]{samples},EULER[xyz]{deg},LIN_ACC_GRAVITY[xyz]{g},MOTION_INTENT[x]{state},MOTION_REQUEST[x]{state}\n");
-    printf("!0 name=\"Format-H\"\n");
-}
 
-// Print a sensor event as a DSF record
-void printDsf(const rvc_SensorEvent_t * event)
-{
-    float t;
-    static uint32_t lastSequence;  // last sequence number
-    rvc_SensorValue_t value;
-
-    // Convert event to value
-    rvc_decode(&value, event);
-    
-    // Compute 32-bit sample_id
-    uint8_t deltaSeq = value.index - (lastSequence & 0xFF);
-    lastSequence += deltaSeq;
-
-    // Get time as float
-    t = value.timestamp_uS / 1000000.0;
-
-    printf(".%d %0.6f,%d,%0.2f,%0.2f,%0.2f,%0.3f,%0.3f,%0.3f,%d,%d\n",
-           0,                                 // using sensor id 0
-           t,                                 // time
-           lastSequence,                      // sequence
-           value.pitch_deg,                   // euler angles [deg]
-           value.roll_deg,
-           value.yaw_deg,
-           value.acc_x_g,                     // accel [g]
-           value.acc_y_g,                     // accel [g]
-           value.acc_z_g,                     // accel [g]
-           value.mi,                          // motion_intent
-           value.mr                           // motion_request
-        );
-}
-
-// Print a sensor event to the console
-void printEvent(const rvc_SensorEvent_t * event)
-{
-    rvc_SensorValue_t value;
-    
-    // decode rvc sensor event.
-    rvc_decode(&value, event);
-
-    printf("%3d | %ld : yaw:%0.2f pitch:%0.2f roll:%0.2f ax:%0.3f ay:%0.3f az:%0.3f mi:%d mr:%d\n",
-           value.index,
-           value.timestamp_uS,
-           value.yaw_deg,
-           value.pitch_deg,
-           value.roll_deg,           value.acc_x_g,
-           value.acc_y_g,
-           value.acc_z_g,
-           value.mi,
-           value.mr
-        );
-}
-
-// Handle sensor events.
-static void sensorHandler(void * cookie, rvc_SensorEvent_t *pEvent)
-{
-printEvent(pEvent);
-}
 
 // --- Public methods -------------------------------------------------
 
-// Initialize 
-void bno08x_init(void)
+
+uint8_t bno08x_RVC_init(void)
 {
     int status;
-    
-    printf("\n\n");
-    printf("RVC-UART Initialization.\n");
 
-    status = rvc_init();
-    if (status != RVC_OK) {
-        printf("Error, %d, from rvc_init.\n", status);
-    }
+    //status = rvc_init();
+    //if (status != RVC_OK) {
+    //    printf("Error, %d, from rvc_init.\n", status);
+    //}
 
-    status = rvc_setCallback(sensorHandler, NULL);
-    if (status != RVC_OK) {
-        printf("Error, %d, from rvc_setCallback.\n", status);
-    }
     
     status = rvc_open();
     if (status != RVC_OK) {
         printf("Error, %d, from rvc_open.\n", status);
     }
+
+    return (uint8_t) status;
 }
 
-// This must be called periodically.  (The demo main calls it continuously in a loop.)
-// It calls sh2_service to keep data flowing between host and sensor hub.
-void bno08x_service(void)
+
+void bno08x_RVC_close()
 {
-    // Check on uart driver.  Data will be delivered via callback.
-    rvc_service();
+    rvc_close();
 }
 
 
+//Adapter function
+uint8_t bno08x_get_imu_data(uint8_t max_frames, IMUValue_t* out_buffer)
+{
+    if (out_buffer == NULL || max_frames == 0) return 0;
 
+    // Temporary buffer with RVC type
+    rvc_SensorValue_t rvc_buffer[max_frames];
+
+    // call low level driver
+    uint8_t fetched_frames = rvc_service(max_frames, rvc_buffer);
+
+    // translate RVC structs into high level struct
+    for (uint8_t i = 0; i < fetched_frames; i++) {
+        out_buffer[i].timestamp_uS = rvc_buffer[i].timestamp_uS;
+        out_buffer[i].index        = rvc_buffer[i].index;
+        out_buffer[i].yaw_deg      = rvc_buffer[i].yaw_deg;
+        out_buffer[i].pitch_deg    = rvc_buffer[i].pitch_deg;
+        out_buffer[i].roll_deg     = rvc_buffer[i].roll_deg;
+        out_buffer[i].acc_x_g      = rvc_buffer[i].acc_x_g;
+        out_buffer[i].acc_y_g      = rvc_buffer[i].acc_y_g;
+        out_buffer[i].acc_z_g      = rvc_buffer[i].acc_z_g;
+    }
+
+    return fetched_frames;
+}

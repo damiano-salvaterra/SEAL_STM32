@@ -18,7 +18,11 @@
 #ifndef BNO08X_APP_H
 #define BNO08X_APP_H
 
-void bno08x_init(void);
-void bno08x_service(void);
-    
+#include <stdint.h>
+#include "imu.h" //need to include this because this module act as an adapter between the HAL middleware and the high level thread funcitons
+
+uint8_t bno08x_RVC_init(void);
+uint8_t bno08x_get_imu_data(uint8_t max_frames, IMUValue_t* out_buffer);
+void bno08x_RVC_close();
+
 #endif
